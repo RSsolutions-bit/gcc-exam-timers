@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCC Exam Block Timers</title>
+    <style>
+        :root {
+            --gcc-maroon: #7B2D3B;
+            --gcc-maroon-dark: #5C1E2B;
+            --gcc-green: #2D6E3F;
+            --gcc-green-light: #4A9E5C;
+            --gcc-green-dark: #1B4D2B;
+            --gcc-gold: #C5A033;
+            --gcc-gold-light: #D4B85C;
+            --gcc-cream: #FAF7F0;
+            --gcc-grey: #F0EDE6;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            text-align: center;
+            background: var(--gcc-cream);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--gcc-maroon), var(--gcc-maroon-dark));
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        .header img {
+            height: 60px;
+            width: auto;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* Current Time Bar */
+        .time-bar {
+            background: var(--gcc-green-dark);
+            color: white;
+            padding: 8px;
+            font-size: 18px;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        /* Setup Panel */
+        .setup-panel {
+            background: white;
+            border-bottom: 3px solid var(--gcc-gold);
+            padding: 20px;
+        }
+        .setup-panel h2 {
+            color: var(--gcc-maroon);
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .exam-inputs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .exam-input {
+            background: var(--gcc-grey);
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: left;
+            transition: border-color 0.3s;
+        }
+        .exam-input:focus-within {
+            border-color: var(--gcc-maroon);
+        }
+        .exam-input label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gcc-maroon);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .exam-input input,
+        .exam-input select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .exam-input input:focus,
+        .exam-input select:focus {
+            outline: none;
+            border-color: var(--gcc-maroon);
+            box-shadow: 0 0 0 2px rgba(123, 45, 59, 0.15);
+        }
+        .exam-input-number {
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+            background: var(--gcc-maroon);
+            display: inline-block;
+            width: 22px;
+            height: 22px;
+            line-height: 22px;
+            border-radius: 50%;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        /* Master Controls */
+        .master-controls {
+            padding: 15px 20px;
+            background: white;
+            border-bottom: 2px solid var(--gcc-grey);
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .master-controls .section-label {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #999;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.3px;
+        }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        .btn:active { transform: translateY(0); }
+
+        .btn-perusal {
+            background: var(--gcc-gold);
+            color: white;
+        }
+        .btn-perusal:hover { background: var(--gcc-gold-light); }
+
+        .btn-exam-start {
+            background: var(--gcc-green);
+            color: white;
+        }
+        .btn-exam-start:hover { background: var(--gcc-green-light); }
+
+        .btn-fullscreen {
+            background: var(--gcc-maroon);
+            color: white;
+        }
+        .btn-fullscreen:hover { background: var(--gcc-maroon-dark); }
+
+        .btn-small {
+            padding: 6px 14px;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+        .btn-pause {
+            background: #e0e0e0;
+            color: #555;
+        }
+        .btn-reset {
+            background: #f5f5f5;
+            color: #888;
+            border: 1px solid #ddd;
+        }
+
+        /* Exam Timers Display */
+        #exam-timers {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            padding: 15px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .exam-timer {
+            background: white;
+            border-radius: 10px;
+            border: 2px solid var(--gcc-gold);
+            padding: 20px;
+            display: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        }
+        .exam-timer.active {
+            display: block;
+        }
+
+        .exam-name-display {
+            font-size: 22px;
+            color: var(--gcc-maroon);
+            font-weight: 700;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--gcc-grey);
+        }
+
+        .timer-section {
+            margin: 10px 0;
+        }
+        .timer-section h3 {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        .perusal-section h3 { color: var(--gcc-gold); }
+        .exam-time-section h3 { color: var(--gcc-green); }
+
+        .timer-display {
+            font-size: 48px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            margin: 5px 0;
+        }
+        .perusal-section .timer-display { color: var(--gcc-gold); }
+        .exam-time-section .timer-display { color: var(--gcc-green-dark); }
+
+        .timer-display.warning { color: #E67E22; }
+        .timer-display.critical { color: #E74C3C; animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .time-log {
+            font-size: 13px;
+            color: #888;
+            margin: 3px 0 8px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        /* Fullscreen Logo (hidden by default) */
+        .fullscreen-logo {
+            display: none;
+        }
+
+        /* Fullscreen Styles */
+        .fullscreen {
+            overflow: hidden;
+        }
+        .fullscreen .hide-in-fullscreen {
+            display: none !important;
+        }
+        .fullscreen .fullscreen-logo {
+            display: block;
+            position: fixed;
+            bottom: 10px;
+            right: 15px;
+            z-index: 100;
+            opacity: 0.7;
+        }
+        .fullscreen .fullscreen-logo img {
+            height: 50px;
+            width: auto;
+        }
+        .fullscreen .time-bar {
+            font-size: 22px;
+            padding: 10px;
+        }
+        .fullscreen .master-controls {
+            background: var(--gcc-maroon-dark);
+            padding: 8px 20px;
+            border-bottom: none;
+        }
+        .fullscreen .master-controls .btn {
+            font-size: 13px;
+            padding: 8px 16px;
+        }
+        .fullscreen #exam-timers {
+            padding: 10px;
+            gap: 10px;
+            height: calc(100vh - 95px);
+            max-width: none;
+        }
+        .fullscreen .exam-timer.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-width: 3px;
+        }
+        .fullscreen .exam-name-display {
+            font-size: 28px;
+        }
+        .fullscreen .timer-display {
+            font-size: 72px;
+        }
+        .fullscreen .time-log {
+            font-size: 16px;
+        }
+        .fullscreen .controls .btn {
+            padding: 8px 18px;
+            font-size: 14px;
+        }
+
+        /* Adaptive fullscreen layouts */
+        .fullscreen #exam-timers {
+            align-content: center;
+        }
+
+        .fullscreen.exam-count-1 #exam-timers {
+            grid-template-columns: 1fr;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .fullscreen.exam-count-1 .exam-timer.active {
+            height: 100%;
+        }
+        .fullscreen.exam-count-1 .timer-display {
+            font-size: 120px;
+        }
+        .fullscreen.exam-count-1 .exam-name-display {
+            font-size: 42px;
+        }
+        .fullscreen.exam-count-1 .time-log {
+            font-size: 20px;
+        }
+
+        .fullscreen.exam-count-2 #exam-timers {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .fullscreen.exam-count-2 .exam-timer.active {
+            height: 100%;
+        }
+        .fullscreen.exam-count-2 .timer-display {
+            font-size: 96px;
+        }
+        .fullscreen.exam-count-2 .exam-name-display {
+            font-size: 36px;
+        }
+        .fullscreen.exam-count-2 .time-log {
+            font-size: 18px;
+        }
+
+        .fullscreen.exam-count-3 #exam-timers {
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+        }
+        .fullscreen.exam-count-3 .timer-display {
+            font-size: 72px;
+        }
+
+        .fullscreen.exam-count-4 #exam-timers {
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+        }
+
+        /* Timer finished state */
+        .exam-timer.finished {
+            border-color: #E74C3C;
+            background: #FFF5F5;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header hide-in-fullscreen">
+        <img src="gcc_logo.png" alt="GCC Logo">
+        <h1>GCC Exam Block Timers</h1>
+    </div>
+
+    <!-- Current Time Bar -->
+    <div class="time-bar">
+        <span id="time-display">--:--:-- AM</span>
+    </div>
+
+    <!-- Setup Panel -->
+    <div class="setup-panel hide-in-fullscreen">
+        <h2>Exam Setup</h2>
+        <div class="exam-inputs-grid" id="exam-inputs">
+            <!-- Generated by JS -->
+        </div>
+    </div>
+
+    <!-- Master Controls -->
+    <div class="master-controls">
+        <span class="section-label hide-in-fullscreen">Master Controls:</span>
+        <button class="btn btn-perusal" onclick="masterStartPerusal()">Start All Perusal/Planning (Staggered)</button>
+        <button class="btn btn-exam-start" onclick="masterStartExams()">Start All Exams</button>
+        <span class="hide-in-fullscreen" style="color:#ccc">|</span>
+        <button class="btn btn-fullscreen hide-in-fullscreen" onclick="enterFullScreen()">Enter Full Screen</button>
+    </div>
+
+    <!-- Exam Timers Display -->
+    <div id="exam-timers">
+        <!-- Generated by JS -->
+    </div>
+
+    <!-- Fullscreen Logo -->
+    <div class="fullscreen-logo">
+        <img src="gcc_logo.png" alt="GCC Logo">
+    </div>
+
+    <!-- Alarm Sound -->
+    <audio id="alarm-sound" src="alarm.mp3" preload="auto"></audio>
+
+    <script>
+        // --- Configuration ---
+        var examCount = 4;
+        var exams = [];
+        var alarmSound = document.getElementById('alarm-sound');
+
+        // --- Current Time ---
+        function updateCurrentTime() {
+            var now = new Date();
+            var options = { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true };
+            document.getElementById('time-display').textContent = now.toLocaleTimeString('en-US', options);
+        }
+        setInterval(updateCurrentTime, 1000);
+        updateCurrentTime();
+
+        // --- Generate Exam Input Fields ---
+        (function generateInputs() {
+            var container = document.getElementById('exam-inputs');
+            for (var i = 1; i <= examCount; i++) {
+                container.innerHTML += `
+                    <div class="exam-input">
+                        <span class="exam-input-number">${i}</span>
+                        <label for="exam-name-${i}">Exam Name</label>
+                        <input type="text" id="exam-name-${i}" placeholder="Enter exam name to activate">
+                        <label for="perusal-time-select-${i}">Perusal/Planning Time</label>
+                        <select id="perusal-time-select-${i}">
+                            <option value="0">0 minutes</option>
+                            <option value="5">5 minutes</option>
+                            <option value="10">10 minutes</option>
+                            <option value="15">15 minutes</option>
+                            <option value="20">20 minutes</option>
+                        </select>
+                        <label for="exam-time-select-${i}">Exam Time</label>
+                        <select id="exam-time-select-${i}">
+                            <option value="60">1 hour</option>
+                            <option value="90">1 hour 30 minutes</option>
+                            <option value="120">2 hours</option>
+                        </select>
+                    </div>`;
+            }
+        })();
+
+        // --- Generate Exam Timer Displays ---
+        (function generateTimers() {
+            var container = document.getElementById('exam-timers');
+            for (var i = 1; i <= examCount; i++) {
+                container.innerHTML += `
+                    <div class="exam-timer" id="exam-timer-${i}">
+                        <h2 class="exam-name-display" id="exam-name-display-${i}"></h2>
+                        <div class="timer-section perusal-section" id="perusal-section-${i}">
+                            <h3>Perusal/Planning Time</h3>
+                            <div class="timer-display" id="perusal-timer-display-${i}">00:00</div>
+                            <div class="time-log" id="perusal-time-log-${i}"></div>
+                            <div class="controls">
+                                <button class="btn btn-small btn-perusal" onclick="startPerusalTimer(${i})">Start</button>
+                                <button class="btn btn-small btn-pause" onclick="pausePerusalTimer(${i})">Pause</button>
+                                <button class="btn btn-small btn-reset" onclick="resetPerusalTimer(${i})">Reset</button>
+                            </div>
+                        </div>
+                        <div class="timer-section exam-time-section" id="exam-section-${i}">
+                            <h3>Exam Time</h3>
+                            <div class="timer-display" id="exam-timer-display-${i}">00:00</div>
+                            <div class="time-log" id="exam-time-log-${i}"></div>
+                            <div class="controls">
+                                <button class="btn btn-small btn-exam-start" onclick="startExamTimer(${i})">Start</button>
+                                <button class="btn btn-small btn-pause" onclick="pauseExamTimer(${i})">Pause</button>
+                                <button class="btn btn-small btn-reset" onclick="resetExamTimer(${i})">Reset</button>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+        })();
+
+        // --- Initialize Exam Data ---
+        for (var i = 1; i <= examCount; i++) {
+            exams[i] = {
+                name: '',
+                perusalTimeRemaining: null,
+                examTimeRemaining: null,
+                perusalTimer: null,
+                examTimer: null,
+                perusalPaused: true,
+                examPaused: true,
+                perusalStartTime: null,
+                perusalEndTime: null,
+                examStartTime: null,
+                examEndTime: null
+            };
+
+            // Bind input listeners
+            (function(index) {
+                var input = document.getElementById('exam-name-' + index);
+                var display = document.getElementById('exam-name-display-' + index);
+                var timerDiv = document.getElementById('exam-timer-' + index);
+
+                input.addEventListener('input', function() {
+                    exams[index].name = this.value;
+                    display.textContent = this.value;
+                    if (this.value.trim() === '') {
+                        timerDiv.style.display = 'none';
+                        timerDiv.classList.remove('active');
+                    } else {
+                        timerDiv.style.display = '';
+                        timerDiv.classList.add('active');
+                    }
+                    updateFullscreenLayout();
+                });
+            })(i);
+        }
+
+        // --- Count active exams ---
+        function getActiveExamCount() {
+            var count = 0;
+            for (var i = 1; i <= examCount; i++) {
+                if (exams[i].name.trim() !== '') count++;
+            }
+            return count;
+        }
+
+        // --- Update fullscreen layout class ---
+        function updateFullscreenLayout() {
+            // Remove all count classes
+            for (var c = 1; c <= 4; c++) {
+                document.body.classList.remove('exam-count-' + c);
+            }
+            var active = getActiveExamCount();
+            if (active > 0) {
+                document.body.classList.add('exam-count-' + active);
+            }
+        }
+
+        // --- Perusal Timer ---
+        function startPerusalTimer(index) {
+            var exam = exams[index];
+            if (!exam.perusalPaused) return;
+            exam.perusalPaused = false;
+            var perusalMinutes = parseInt(document.getElementById('perusal-time-select-' + index).value);
+            if (exam.perusalTimeRemaining == null || exam.perusalTimeRemaining <= 0) {
+                exam.perusalTimeRemaining = perusalMinutes * 60;
+            }
+            exam.perusalStartTime = new Date();
+            exam.perusalEndTime = new Date(exam.perusalStartTime.getTime() + exam.perusalTimeRemaining * 1000);
+            displayPerusalTimeLog(index);
+            updatePerusalDisplay(index);
+            exam.perusalTimer = setInterval(function() {
+                if (!exam.perusalPaused && exam.perusalTimeRemaining > 0) {
+                    exam.perusalTimeRemaining--;
+                    updatePerusalDisplay(index);
+                }
+                if (exam.perusalTimeRemaining <= 0) {
+                    clearInterval(exam.perusalTimer);
+                    exam.perusalPaused = true;
+                    alarmSound.play();
+                }
+            }, 1000);
+        }
+
+        function pausePerusalTimer(index) {
+            exams[index].perusalPaused = true;
+            clearInterval(exams[index].perusalTimer);
+        }
+
+        function resetPerusalTimer(index) {
+            var exam = exams[index];
+            exam.perusalPaused = true;
+            clearInterval(exam.perusalTimer);
+            var perusalMinutes = parseInt(document.getElementById('perusal-time-select-' + index).value);
+            exam.perusalTimeRemaining = perusalMinutes * 60;
+            exam.perusalStartTime = null;
+            exam.perusalEndTime = null;
+            document.getElementById('perusal-time-log-' + index).textContent = '';
+            document.getElementById('perusal-timer-display-' + index).className = 'timer-display';
+            updatePerusalDisplay(index);
+        }
+
+        function updatePerusalDisplay(index) {
+            var exam = exams[index];
+            var minutes = Math.floor(exam.perusalTimeRemaining / 60);
+            var seconds = exam.perusalTimeRemaining % 60;
+            var el = document.getElementById('perusal-timer-display-' + index);
+            el.textContent = ('0' + minutes).slice(-2) + ':' + ('0' + seconds).slice(-2);
+
+            // Warning/critical states
+            el.classList.remove('warning', 'critical');
+            if (exam.perusalTimeRemaining <= 0) {
+                el.classList.add('critical');
+            } else if (exam.perusalTimeRemaining <= 60) {
+                el.classList.add('warning');
+            }
+        }
+
+        function displayPerusalTimeLog(index) {
+            var exam = exams[index];
+            var options = { hour: 'numeric', minute: 'numeric', hour12: true };
+            var start = exam.perusalStartTime.toLocaleTimeString('en-US', options);
+            var end = exam.perusalEndTime.toLocaleTimeString('en-US', options);
+            document.getElementById('perusal-time-log-' + index).textContent =
+                'Started: ' + start + '  |  Finishes: ' + end;
+        }
+
+        // --- Exam Timer ---
+        function startExamTimer(index) {
+            var exam = exams[index];
+            if (!exam.examPaused) return;
+            exam.examPaused = false;
+            var examMinutes = parseInt(document.getElementById('exam-time-select-' + index).value);
+            if (exam.examTimeRemaining == null || exam.examTimeRemaining <= 0) {
+                exam.examTimeRemaining = examMinutes * 60;
+            }
+            exam.examStartTime = new Date();
+            exam.examEndTime = new Date(exam.examStartTime.getTime() + exam.examTimeRemaining * 1000);
+            displayExamTimeLog(index);
+            updateExamDisplay(index);
+            exam.examTimer = setInterval(function() {
+                if (!exam.examPaused && exam.examTimeRemaining > 0) {
+                    exam.examTimeRemaining--;
+                    updateExamDisplay(index);
+                }
+                if (exam.examTimeRemaining <= 0) {
+                    clearInterval(exam.examTimer);
+                    exam.examPaused = true;
+                    document.getElementById('exam-timer-' + index).classList.add('finished');
+                    alarmSound.play();
+                }
+            }, 1000);
+        }
+
+        function pauseExamTimer(index) {
+            exams[index].examPaused = true;
+            clearInterval(exams[index].examTimer);
+        }
+
+        function resetExamTimer(index) {
+            var exam = exams[index];
+            exam.examPaused = true;
+            clearInterval(exam.examTimer);
+            var examMinutes = parseInt(document.getElementById('exam-time-select-' + index).value);
+            exam.examTimeRemaining = examMinutes * 60;
+            exam.examStartTime = null;
+            exam.examEndTime = null;
+            document.getElementById('exam-time-log-' + index).textContent = '';
+            document.getElementById('exam-timer-display-' + index).className = 'timer-display';
+            document.getElementById('exam-timer-' + index).classList.remove('finished');
+            updateExamDisplay(index);
+        }
+
+        function updateExamDisplay(index) {
+            var exam = exams[index];
+            var hours = Math.floor(exam.examTimeRemaining / 3600);
+            var minutes = Math.floor((exam.examTimeRemaining % 3600) / 60);
+            var seconds = exam.examTimeRemaining % 60;
+            var timeString = '';
+            if (hours > 0) {
+                timeString += ('0' + hours).slice(-2) + ':';
+            }
+            timeString += ('0' + minutes).slice(-2) + ':' + ('0' + seconds).slice(-2);
+            var el = document.getElementById('exam-timer-display-' + index);
+            el.textContent = timeString;
+
+            // Warning/critical states
+            el.classList.remove('warning', 'critical');
+            if (exam.examTimeRemaining <= 0) {
+                el.classList.add('critical');
+            } else if (exam.examTimeRemaining <= 300) {
+                el.classList.add('warning');
+            }
+        }
+
+        function displayExamTimeLog(index) {
+            var exam = exams[index];
+            var options = { hour: 'numeric', minute: 'numeric', hour12: true };
+            var start = exam.examStartTime.toLocaleTimeString('en-US', options);
+            var end = exam.examEndTime.toLocaleTimeString('en-US', options);
+            document.getElementById('exam-time-log-' + index).textContent =
+                'Started: ' + start + '  |  Finishes: ' + end;
+        }
+
+        // --- Master Controls ---
+        var perusalStaggerTimeouts = [];
+
+        function masterStartPerusal() {
+            // Clear any pending stagger timeouts
+            perusalStaggerTimeouts.forEach(function(t) { clearTimeout(t); });
+            perusalStaggerTimeouts = [];
+
+            // Collect active exams with perusal time > 0
+            var activePerusals = [];
+            for (var i = 1; i <= examCount; i++) {
+                if (exams[i].name.trim() !== '' && exams[i].perusalPaused) {
+                    var mins = parseInt(document.getElementById('perusal-time-select-' + i).value);
+                    if (mins > 0) {
+                        activePerusals.push({ index: i, minutes: mins });
+                    }
+                }
+            }
+            if (activePerusals.length === 0) return;
+
+            // Find the longest perusal time
+            var maxMinutes = 0;
+            activePerusals.forEach(function(p) {
+                if (p.minutes > maxMinutes) maxMinutes = p.minutes;
+            });
+
+            // Start each timer: longest immediately, shorter ones staggered
+            // so all perusal periods finish at the same time
+            activePerusals.forEach(function(p) {
+                var delaySeconds = (maxMinutes - p.minutes) * 60;
+                if (delaySeconds === 0) {
+                    startPerusalTimer(p.index);
+                } else {
+                    var tid = setTimeout(function() {
+                        startPerusalTimer(p.index);
+                    }, delaySeconds * 1000);
+                    perusalStaggerTimeouts.push(tid);
+                }
+            });
+        }
+
+        function masterStartExams() {
+            for (var i = 1; i <= examCount; i++) {
+                if (exams[i].name.trim() !== '' && exams[i].examPaused) {
+                    startExamTimer(i);
+                }
+            }
+        }
+
+        // --- Full Screen ---
+        function enterFullScreen() {
+            var elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen();
+            } else if (elem.webkitRequestFullscreen) {
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) {
+                elem.msRequestFullscreen();
+            }
+        }
+
+        function toggleFullScreenStyles(isFullScreen) {
+            if (isFullScreen) {
+                document.body.classList.add('fullscreen');
+                updateFullscreenLayout();
+            } else {
+                document.body.classList.remove('fullscreen');
+            }
+        }
+
+        document.addEventListener('fullscreenchange', function() {
+            toggleFullScreenStyles(!!document.fullscreenElement);
+        });
+        document.addEventListener('webkitfullscreenchange', function() {
+            toggleFullScreenStyles(!!document.webkitFullscreenElement);
+        });
+
+        // --- Init ---
+        window.onload = function() {
+            for (var i = 1; i <= examCount; i++) {
+                resetPerusalTimer(i);
+                resetExamTimer(i);
+            }
+        };
+    </script>
+</body>
+</html>
